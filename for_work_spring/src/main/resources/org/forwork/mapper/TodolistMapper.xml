@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.forwork.mapper.TodolistMapper">
+
+	<!-- 할 일 추가 -->
+	<insert id="insertTodolist">
+		insert into todolist(todolist_id, member_id, todolist_content, todolist_check)
+			values(todolist_seq.nextval, #{member_id}, #{todolist_content}, 'n')
+	</insert>
+	
+	<!-- 전체 목록 -->
+	<select id="selectTodolist" resultType="org.forwork.domain.Todolist">
+		select * from todolist where member_id = #{member_id}
+	</select>
+	
+	<!-- 할 일 완료 -->
+	<update id="updateDonelist">
+		update todolist set todolist_check = 'y' where todolist_id = #{todolist_id}
+	</update>
+	
+	<!-- 할 일 목록 -->
+	<select id="selectDoinglist" resultType="org.forwork.domain.Todolist">
+		select * from todolist where member_id = #{member_id} and todolist_check = 'n' order by todolist_id desc
+	</select>
+	
+	<!-- 완료된 할 일 목록 -->
+	<select id="selectDonelist" resultType="org.forwork.domain.Todolist">
+		select * from todolist where member_id = #{member_id} and todolist_check = 'y'
+	</select>
+	
+	<!-- 할 일 삭제 -->
+	<delete id="deleteTodolist">
+		delete from todolist where todolist_id = #{todolist_id}
+	</delete>
+	
+	<!-- 완료 항목 전체 삭제 -->
+	<delete id="deleteAllDonelist">
+		delete from todolist where member_id = #{member_id} and todolist_check = 'y'
+	</delete>
+	
+	<!-- 할 일 수정 -->
+	<update id="updateTodolist">
+		update todolist set todolist_content = #{todolist_content} where todolist_id = #{todolist_id}
+	</update>
+	
+</mapper>

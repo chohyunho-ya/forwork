@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.forwork.mapper.MyProfileMapper">
+
+	<insert id="insert">
+		insert into portfolio
+			(portfolio_id, member_id, portfolio_title, portfolio_start_date, portfolio_end_date,
+			portfolio_detail)
+			values
+			(portfolio_seq.nextval,#{member_id},#{portfolio_title},#{portfolio_start_date},#{portfolio_end_date},#{portfolio_detail})
+	</insert>
+
+	<select id="read" resultType="org.forwork.domain.Portfolio">
+		select *
+			from portfolio
+			where portfolio_id=#{portfolio_id}
+	</select>
+
+	<delete id="delete">
+		delete from portfolio
+			where portfolio_id=#{portfolio_id}
+	</delete>
+
+	<update id="update">
+		update portfolio
+			set portfolio_title = #{portfolio_title},
+			portfolio_start_date = #{portfolio_start_date},
+			portfolio_end_date = #{portfolio_end_date},
+			portfolio_detail = #{portfolio_detail}
+			where portfolio_id = #{portfolio_id}
+	</update>
+	
+
+
+
+
+	<select id="listPortfolio" resultType="org.forwork.domain.Portfolio">
+		select *
+			from portfolio
+			where member_id = #{member_id}
+			order by to_number(portfolio_id) desc
+	</select>
+
+	<insert id="updatePfLang">
+		insert into portfolio_language(portfolio_id, portfolio_language,
+			portfolio_language_seq)
+			values(
+			#{portfolio_id},
+			#{portfolio_language},
+			portfolio_language_seq.nextval
+			)
+	</insert>
+	
+	<select id="readPfLangList" resultType="org.forwork.domain.PortfolioLanguage">
+		select *
+			from portfolio_language
+			where portfolio_id=#{portfolio_id}
+			order by PORTFOLIO_LANGUAGE
+	</select>
+
+	
+	<insert id="insertPfLang">
+		insert into portfolio_language(portfolio_id, portfolio_language,portfolio_language_seq)
+			values((select max(to_number(portfolio_id))
+		    from portfolio),#{portfolio_language},portfolio_language_seq.nextval)
+	</insert>
+
+	<delete id="deletePfLang">
+		delete from portfolio_language
+			where portfolio_id=#{portfolio_id}
+	</delete>
+
+	<!-- 통계값을 가져오기 위한 hashMap 구성 -->
+	<resultMap type="HashMap" id="langStatMap">
+		<result column="portfolio_language" property="language" />
+		<result column="count(*)" property="langCount" />
+	</resultMap>
+
+	<select id="rollupLanguage" resultMap="langStatMap">
+		select portfolio_language, count(*) as language_count
+		      from portfolio_language_view
+		      where member_id=#{member_id}
+		      group by grouping sets(portfolio_language)
+	</select>
+	
+	<!-- status_detail이 null일 시, "상태없음"으로 view에 표시하기 위해서 외부조인 사용 -->
+	<select id="memberInfo" resultType="org.forwork.domain.Member">
+		 select a.member_id, a.name, a.email, b.status_detail
+			from member a, member_status b
+			where a.status_id = b.status_id(+) and member_id=#{member_id}
+	</select>
+	
+	<update id="updateMStatus">
+		update member
+			set status_id = #{status_id}
+			where member_id=#{member_id}
+	</update>
+	
+</mapper>

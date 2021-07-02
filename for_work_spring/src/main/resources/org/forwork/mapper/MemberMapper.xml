@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.forwork.mapper.MemberMapper">
+
+	
+	<resultMap type="org.forwork.domain.Member" id="memberMap">
+	
+			<id column="member_id" property="member_id"/>
+		
+		<result column="member_id" property="member_id"/>
+		
+		<result column="email" property="email"/>
+		
+		<result column="pw" property="pw"/>
+		
+		<result column="name" property="name"/>
+		
+		<collection property="authList" resultMap="authMap"> </collection>
+
+	</resultMap>
+	
+	<resultMap type="org.forwork.domain.Auth" id="authMap">
+
+		<result column="email" property="email"/>
+
+		<result column="auth" property="auth"/>
+
+	</resultMap>
+	
+	<select id="read" resultMap="memberMap">
+	select mem.member_id, mem.email, mem.pw, mem.name, auth.auth from member mem left outer join auth auth on mem.email = 
+	auth.email where mem.email = #{username} </select>
+	
+	<insert id="signUp" parameterType="org.forwork.domain.Member">
+	
+	insert into member (member_id, email, name, pw)
+	values (member_seq.nextval, #{email}, #{name}, #{pw}) </insert>
+	
+	<insert id="insertAuth" parameterType="org.forwork.domain.Auth">
+	insert into auth (email, auth) values (#{email}, #{auth}) </insert>
+	
+	
+
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

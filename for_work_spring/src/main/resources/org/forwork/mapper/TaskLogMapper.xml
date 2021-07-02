@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.forwork.mapper.TaskLogMapper">
+	<insert id="insertLog">
+		insert into task_log values(task_log_seq.nextval,#{task_id},#{content},SYSDATE,#{project_id})
+	</insert>
+	<select id="getLogList" resultType="org.forwork.domain.TaskLog">
+		<!-- hint 추가해서 성능 올리기  -->
+		select * from task_log where task_id = #{task_id} order by log_id desc
+	</select>
+	
+	<select id="getLog" resultType="org.forwork.domain.TaskLog">
+		select * from task_log where log_id = (select max(log_id) from task_log where task_id = #{task_id})
+	</select>
+</mapper>

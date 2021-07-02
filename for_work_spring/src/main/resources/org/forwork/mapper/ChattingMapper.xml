@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.forwork.mapper.ChattingMapper">
+	<cache />
+	<resultMap id="messageResult" type="org.forwork.dto.MessageDto">
+		<id property="message_id" column="message_id"/>
+		<result property="message" column="message"/>
+		<result property="send_time" column="send_time"/>
+		<result property="chatroom_id" column="chatroom_id"/>
+		<result property="file_path" column="file_path"/>
+		<result property="is_info" column="is_info"/>
+		<collection property="sender" ofType="org.forwork.domain.Member" column="sender">
+			<id property="member_id" column="member_id"/>
+			<result property="name" column="name"/>
+		</collection>
+	</resultMap>
+	
+	<resultMap type="map" id="unreadCountResultMap">
+		<result column="unread_count" property="unreadCount"/>
+		<result column="chatroom_id" property="chatroomId"/>
+	</resultMap>
+	
+	<resultMap type="map" id="searchedMessageResultMap">
+		<result column="rownum" property="rownum"/>
+		<result column="message_id" property="messageId"/>
+	</resultMap>
+	
+	<select id="getChatroomMemberRelation" resultType="org.forwork.domain.ChatroomMemberRelation">
+		select * from chatroom_member_relation
+	</select>
+	
+	<insert id="insertMessage">
+		<selectKey keyProperty="message_id" order="BEFORE" resultType="String">
+			select message_id_seq.nextval from dual
+		</selectKey>
+		insert into message(message_id, message, send_time, sender, chatroom_id, file_path, is_info)
+			values(#{message_id}, #{message}, to_date(#{send_time}, 'yyyy-mm-dd hh24:mi:ss'), #{sender}, #{chatroom_id}, #{file_path}, #{is_info})
+	</insert>
+	
+	<select id="getMessageByChatroomId" resultMap="messageResult">
+		select * 
+			from message m, member u
+			where m.sender = u.member_id(+)
+			and m.chatroom_id = #{chatroom_id}
+			order by m.send_time
+	</select>
+	
+	<!-- ISSUE: SQL Hint 적용 안됨 -->
+	<select id="getMessageByChatroomIdWithPaging" resultMap="messageResult">
+		<![CDATA[
+			select *
+				from (select rownum as rn, tmp.* 
+						from (SELECT *
+								from message ms, member mb
+								where ms.sender = mb.member_id(+)
+								and ms.chatroom_id = #{chatroom_id}
+								order by message_id desc) tmp
+						where rownum <= (#{cri.pageNum} * #{cri.amount}))
+			where rn > (#{cri.pageBefore}) * #{cri.amount}
+		]]>
+	</select>
+	
+	<!-- 유저가 가진 채팅방 목록 -->
+	<select id="getChatroomByMemberId" resultType="org.forwork.domain.Chatroom">
+		select *
+			from chatroom_vw
+			where member_id = #{member_id}
+	</select>
+	
+	<!-- 다른 js에서 가져오기 -->
+	<select id="getMemberById" resultType="org.forwork.domain.Member">
+		select *
+			from member
+			where member_id = #{member_id}
+	</select>
+	
+	
+	<!-- <select id="getLastMessagePerChatroomByMemberId" resultType="org.forwork.domain.Message">
+		select *
+			from (select chatroom_id, max(message_id) as last_sent_id
+					from message
+					where chatroom_id in (select chatroom_id
+											from chatroom_vw
+											where member_id = #{member_id})
+					group by chatroom_id) c, message m
+			where c.chatroom_id = m.chatroom_id
+			and c.last_sent_id = m.message_id
+	</select> -->
+	
+	<select id="getLastMessageByChatroomId" resultType="org.forwork.domain.Message">
+		select * from message
+				where message_id = (select max(message_id) as last_sent_id
+										from message
+										where chatroom_id = #{chatroom_id})
+	</select>
+	
+	<select id="getChatroomName" resultType="String">
+		select chatroom_name from chatroom
+		where chatroom_id = #{chatroom_id}
+	</select>
+	
+	<!-- 메시지 읽음 처리 -->
+	<update id="updateReadStatus">
+		update member_message_relation
+		set is_read = 'y'
+		where message_id = #{message_id}
+		and member_id = #{member_id}
+	</update>
+	
+	<update id="updateReadStatusPerChatroomByMemberId">
+		update (
+			select *
+			from member_message_relation mmr, message m
+			where mmr.message_id = m.message_id
+			and mmr.member_id = #{member_id}
+			and m.chatroom_id = #{chatroom_id}
+			and mmr.is_read = 'n'
+		) 
+		set is_read = 'y'
+	</update>
+	
+	<insert id="insertUnreadStatus">
+		insert into member_message_relation (member_id, message_id, is_read)
+		values (#{member_id}, #{message_id}, 'n')
+	</insert>
+	
+	<select id="countUnreadPerChatroomByMemberId" resultMap="unreadCountResultMap">
+		select count(mmr.is_read) as unread_count, m.chatroom_id
+			from message m, member_message_relation mmr
+			where m.message_id = mmr.message_id
+			and mmr.is_read = 'n'
+			and mmr.member_id = #{member_id}
+			group by m.chatroom_id
+	</select>
+	
+	<select id="getMemberByChatroomId" resultType="String">
+		select member_id
+			from chatroom_member_relation
+			where chatroom_id = #{chatroom_id}
+	</select>
+	
+	<!-- 다른 곳에서 가져오기 -->
+	<select id="getAllMembers" resultType="org.forwork.domain.Member">
+		select * from member
+	</select>
+	
+	<insert id="createChatroom">
+		<selectKey keyProperty="chatroom_id" order="BEFORE" resultType="String">
+			select chatroom_id_seq.nextval from dual
+		</selectKey>
+		insert into chatroom (chatroom_id, chatroom_name)
+			values (#{chatroom_id}, #{chatroom_name})
+	</insert>
+	
+	<insert id="insertChatroomMemberRelation">
+		insert into chatroom_member_relation (chatroom_id, member_id)
+		values (#{chatroom_id}, #{member_id})
+	</insert>
+	
+	<delete id="deleteChatroomMemberRelation">
+		delete from chatroom_member_relation
+			where member_id = #{member_id}
+			and chatroom_id = #{chatroom_id}
+	</delete>
+	
+	<select id="searchMessage" resultMap="searchedMessageResultMap">
+		<!-- 마지막에 rownum으로 select하면 새로 rownum을 계산해서 보여줌  -->
+		select *
+			from (select tmp.*, rownum 
+					from (select message_id, message 
+							from message
+							where chatroom_id = #{chatroom_id}
+							order by message_id desc) tmp)
+			where message like #{query}
+	</select>
+
+	
+</mapper>

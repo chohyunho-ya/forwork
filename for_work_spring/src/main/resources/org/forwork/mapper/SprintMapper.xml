@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.forwork.mapper.SprintMapper">
+
+<insert id="insertSprint">
+	insert into sprint(sprint_id, sprint_title, sprint_color, sprint_start_date, sprint_end_date,project_id) 
+	values(sprint_seq.nextval, #{sprint_title}, #{sprint_color}, #{sprint_start_date}, #{sprint_end_date},#{project_id})
+</insert>
+
+<select id="listSprint" resultType="org.forwork.domain.Sprint">
+	select sprint_id, sprint_title, sprint_color, project_id, 
+	To_CHAR(sprint_start_date,'YYYY-MM-DD') as sprint_start_date, TO_CHAR(sprint_end_date,'YYYY-MM-DD') as sprint_end_date 
+	from sprint where project_id =#{projcet_id} order by sprint_start_date
+</select>
+
+<select id="getSprint" resultType="org.forwork.domain.Sprint">
+	select * from sprint where sprint_id = #{sprint_id}
+</select>
+
+<delete id="deleteSprint">
+	delete from sprint where sprint_id = #{sprint_id}
+</delete>
+
+<update id="updateSprint">
+	update sprint set sprint_title = #{sprint_title}, sprint_color = #{sprint_color}, 
+	sprint_start_date = #{sprint_start_date}, sprint_end_date = #{sprint_end_date} 
+	where sprint_id = #{sprint_id}
+</update>
+
+<select id="todaySprint" resultType="String">
+   <![CDATA[
+   select /*+ INDEX_DESC(sprint sprint_id)*/ sprint_id from sprint where SPRINT_START_DATE <= SYSDATE and SYSDATE <=SPRINT_END_DATE and project_id=#{project_id} and rownum = 1
+   ]]>
+</select>
+
+<insert id="addTaskSprintRelation">
+	insert into task_sprint_relation values(#{sprint_id},#{task_id})
+</insert>
+
+<update id="updateTaskSprintRelation">
+	update task_sprint_relation set sprint_id = #{sprint_id} where task_id = #{task_id}
+</update>
+
+</mapper>

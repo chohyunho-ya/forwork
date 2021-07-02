@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.forwork.mapper.PMPageMapper">
+
+<select id="getColumCount" resultType="org.forwork.domain.TeamProgress">
+select count(case when task_type_id=1 then 1 end) as storiesCount,
+count(case when task_type_id=2 then 1 end) as todoCount,
+count(case when task_type_id=3 then 1 end) as doingCount,
+count(case when task_type_id=4 then 1 end) as doneCount,
+count(*) as totalCount 
+from task where project_id=#{project_id}
+</select>
+
+<select id="getPersonalCount" parameterType="int" resultType="org.forwork.domain.TeamProgress">
+select responsibility,name, project_id,
+count(case when task_type_id=1 then 1 end) as storiesCount,
+count(case when task_type_id=2 then 1 end) as todoCount,
+count(case when task_type_id=3 then 1 end) as doingCount,
+count(case when task_type_id=4 then 1 end) as doneCount, 
+count(*) as totalCount 
+from task 
+where project_id=#{project_id}
+group by responsibility,name,project_id
+order by name
+</select>
+
+<select id="getPersonalTasks" parameterType="map" resultType="org.forwork.domain.TeamProgress">
+select responsibility, name, task_content, project_id 
+from task where project_id = #{project_id} and responsibility = #{responsibility}
+</select>
+
+<select id="getProjects" resultType="org.forwork.domain.Project">
+select pro.project_id, pro.project_title, pro.project_status_id,
+pro.project_start_date,pro.project_end_date, pmr.is_pm 
+from PROJECT PRO left outer join PROJECT_MEMBER_RELATION PMR
+on PRO.PROJECT_ID =	PMR.PROJECT_ID WHERE PMR.MEMBER_ID = #{member_id} order by pro.project_id asc
+</select>
+
+<insert id="insertLang">
+insert into project_language (project_id, project_language,project_language_seq) 
+values(#{project_id}, #{project_language}, project_language_seq.nextval) 
+</insert>
+
+<select id="getLang" resultType="org.forwork.domain.ProjectLanguage">
+select project_language, project_id, project_language_seq from project_language
+where project_id = #{project_id}
+</select>
+
+<delete id="deleteLang" parameterType="int">
+delete from project_language where project_language_seq = #{project_language_seq}
+</delete>
+
+<update id="updateLang" parameterType="org.forwork.domain.ProjectLanguage">
+update project_language set project_language=#{project_language} where project_language_seq = #{project_language_seq}
+</update>
+
+<select id="getSeq" resultType="org.forwork.domain.ProjectLanguage">
+select project_language, project_id, project_language_seq from project_language
+where project_language_seq = #{project_language_seq}
+</select>
+
+<select id="isPm" parameterType="map" resultType="org.forwork.domain.Project">
+select * from project_member_relation where project_id = #{project_id} and member_id = #{member_id}
+</select>
+
+
+</mapper>

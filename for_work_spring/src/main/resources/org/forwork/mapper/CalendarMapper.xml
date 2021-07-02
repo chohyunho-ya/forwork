@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.forwork.mapper.CalendarMapper">
+
+	<insert id="insertCalendar">
+		insert into calendar values(CALENDAR_SEQ.nextval,#{project_id},#{calendar_start_date},#{calendar_end_date},#{calendar_content},'true')
+	</insert>
+	
+	<delete id="deleteCalendar">
+		delete from calendar where calendar_id = #{calendar}
+	</delete>
+	
+	<update id="updateCalendar">
+		update calendar set calendar_start_date = #{calendar_start_date}, calendar_end_date = #{calendar_end_date}, calendar_content = #{calendar_content}
+		where calendar_id = #{calendar_id}
+	</update>
+	
+	<select id="getCalendar" resultType="org.forwork.domain.Calendar">
+		select * from calendar where calendar_id = #{calendar_id}
+	</select>
+	
+	<select id="getCalendarList" resultType="org.forwork.domain.Calendar">
+		select * from calendar where project_id = #{project_id}
+	</select>
+	
+	
+</mapper>

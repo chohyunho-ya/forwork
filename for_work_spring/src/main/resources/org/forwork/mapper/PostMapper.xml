@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.forwork.mapper.PostMapper">
+
+	<sql id="criteria">
+		<trim prefix="(" suffix=") AND " prefixOverrides="OR">
+			<foreach item='type' collection="cri.typeArr">
+				<trim prefix="OR">
+					<choose>
+						<when test="type == 'T'.toString()">
+							post_title like '%'||#{cri.keyword}||'%'
+						</when>
+						<when test="type == 'C'.toString()">
+							post_content like '%'||#{cri.keyword}||'%'
+						</when>
+						<when test="type == 'W'.toString()">
+							post_writer like '%'||#{cri.keyword}||'%'
+						</when>
+					</choose>
+				</trim>
+			</foreach>
+		</trim>
+	</sql>
+	
+
+	<insert id="insertPostSelectKey">
+		<selectKey keyProperty="post_id" order="BEFORE" resultType="long">
+			select post_seq.nextval from dual
+		</selectKey>
+		
+		insert into post(post_id, board_id, post_writer, post_title, post_content, post_date)
+			values(#{post_id}, #{board_id}, #{post_writer}, #{post_title}, #{post_content}, SYSDATE)
+	</insert>
+	
+	<select id="listPost" resultType="org.forwork.domain.Post">
+		select * from post <where>board_id = #{board_id}</where> order by post_id desc
+	</select>
+	
+	<select id="listPostWithPaging" resultType="org.forwork.domain.Post">
+		<![CDATA[
+			select post_id, board_id, post_writer, post_title, post_date, hitcount, commentCnt
+			from
+				(
+				select /*+INDEX_DESC(post post_id_pk)*/
+					rownum rn, post_id, board_id, post_writer, post_title, post_date, hitcount, commentCnt from post
+					where 
+		]]>
+		
+		<include refid="criteria"></include>
+		
+		<![CDATA[
+					board_id = #{board_id} and post_id > 0 and rownum <= #{cri.pageNum} * #{cri.amount}
+				)
+			where rn > (#{cri.pageNum} - 1) * #{cri.amount}
+		]]>
+	</select>
+	
+	<select id="getCountByBno" resultType="int">
+		select count(*) from post 
+			where 
+			<include refid="criteria"></include>
+			board_id = #{board_id} order by post_id desc
+	</select>
+	
+	<!-- 공지 사항 미리 보기 -->
+	<select id="listNotice" resultType="org.forwork.domain.Post">
+ 		<![CDATA[
+ 		select ROWNUM, b.board_id, p.post_id, p.post_title, p.post_content, p.post_date, p.hitcount 
+ 			from board b, post p where b.board_id = p.board_id 
+ 			AND board_name = '공지 사항' 
+ 			AND project_id = #{project_id} 
+ 			AND ROWNUM <= 3 
+ 			order by p.post_id DESC
+ 		 ]]>
+	</select>
+	
+	<!-- 최신 글 목록 -->
+	<select id="listBoard" resultType="org.forwork.domain.Post">
+		<![CDATA[
+		select distinct rownum, board_id, post_id, post_title, post_writer, post_date, hitcount
+			from 
+				(
+				select distinct p.board_id, p.post_id, p.post_title, p.post_writer, p.post_date, p.hitcount
+					from board b, post p where b.project_id = #{project_id} order by p.post_id desc
+				)
+			where rownum <= 7 order by post_id desc
+		]]>
+	</select>
+	
+	<!-- 게시글 상세 보기 -->
+	<select id="getPost" resultType="org.forwork.domain.Post">
+		select * from post where post_id = #{post_id}
+	</select>
+	
+	<!-- 조회수 -->
+	<update id="updateHitcount">
+		update post set hitcount = hitcount + 1 where post_id = #{post_id}
+	</update>
+	
+	<update id="updatePost">
+		update post set post_title = #{post_title}, post_content = #{post_content} where post_id = #{post_id}
+	</update>
+	
+	<delete id="deletePost">
+		delete from post where post_id = #{post_id}
+	</delete>
+	
+	<select id="updateCommentCnt">
+		update post set commentCnt = commentCnt + #{amount} where post_id = #{post_id}
+	</select>
+	
+	
+
+</mapper>

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.forwork.mapper.PMOPageMapper">
+
+	<update id="check">
+		update project
+			set project_status_id= #{approval_id},
+				check_date = sysdate
+			where project_id= #{project_id}
+	</update>
+	
+	<update id="complete">
+		update project
+			set project_status_id= #{approval_id},
+				complete_date = sysdate
+			where project_id= #{project_id}
+	</update>
+	
+	<select id="getProjectList" resultType="org.forwork.dto.PMODto">
+		select *
+			from PROJECT_STATUS_MEMBER_VW
+			where approval_id = #{approval_id} and is_pm='y'
+			order by register_date
+	</select>
+	
+	<select id="getMemberList" resultType="org.forwork.domain.Member">
+		select Name
+			from PROJECT_STATUS_MEMBER_VW
+			  where project_id=#{project_id} and is_pm='n'
+
+	</select>
+	
+	<select id ="getProject" resultType="org.forwork.dto.PMODto">
+		select project_id, project_title, project_Start_date, project_end_Date, approval_id, name, approval_Detail
+			from PROJECT_STATUS_MEMBER_VW
+			where project_id=#{project_id} and is_pm='y'
+	</select>
+
+	<select id="getProjectTimeline" resultType="org.forwork.dto.PMODto">
+		select register_date, check_date, complete_date
+			from project
+			where project_id = #{project_id}
+	</select>
+
+
+	<select id="countProject" resultType="org.forwork.dto.PMODto">
+		select project_status_id as approval_id, count(*) as count
+			from project
+      		group by project_status_id  	
+	</select>
+
+</mapper>

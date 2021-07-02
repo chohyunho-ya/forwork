@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.forwork.mapper.ProjectMapper">
+
+	<insert id="projectCreate" parameterType="org.forwork.domain.Project">
+		insert into project
+		(project_id, project_title, project_start_date,
+		project_end_date,project_status_id)
+		values (project_seq.nextval,
+		#{project_title}, #{project_start_date},
+		#{project_end_date},#{project_status_id})
+	</insert>
+
+	<select id="getProjectList" parameterType="int"
+		resultType="org.forwork.domain.Project">
+		select pro.project_id, pro.project_title, pro.project_start_date,
+		pro.project_end_date, pro.project_status_id, pmr.is_pm from
+		PROJECT PRO left outer join PROJECT_MEMBER_RELATION PMR on PRO.PROJECT_ID =
+		PMR.PROJECT_ID WHERE PMR.MEMBER_ID = #{member_id}
+	</select>
+
+	<insert id="createProject" parameterType="org.forwork.domain.Project">
+		<selectKey keyProperty="project_id" resultType="int" order="BEFORE">
+			select project_seq.nextval+1 FROM DUAL
+		</selectKey>
+		insert into project (project_id, project_title, project_start_date,
+		project_end_date, project_status_id,register_date)
+		values (project_seq.nextval,
+		#{project_title}, #{project_start_date},
+		#{project_end_date},
+		#{project_status_id}, sysdate)
+	</insert>
+
+	<insert id="createMemberProjectRelationPm" parameterType="org.forwork.domain.Project">
+		insert
+		into project_member_relation (project_id, member_id, is_pm)
+		select
+		#{project_id}, member_id, 'y'
+		from
+		member
+		where
+		email = #{pm_id}
+	</insert>
+
+	<insert id="createMemberProjectRelationPa" parameterType="org.forwork.domain.Project">
+		insert
+		into project_member_relation (project_id, member_id, is_pm)
+		select
+		#{project_id}, member_id, 'n'
+		from
+		member
+		where
+		email = #{pa_email}
+	</insert>
+
+</mapper>
